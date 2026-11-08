@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,12 +38,10 @@ video{width:100%;margin-top:15px;border-radius:10px}
  border-radius:10px;margin-top:12px
 }
 .clip a{color:#8ec5ff;font-weight:bold}
-small{color:#b8c5d8}
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
 <h1>IPL UPDATE</h1>
@@ -79,6 +76,7 @@ small{color:#b8c5d8}
 
 </div>
 
+<!-- Single Thread FFmpeg: No SharedArrayBuffer required -->
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
 <script>
@@ -125,12 +123,10 @@ fileInput.addEventListener('change',()=>{
  };
 
  document.getElementById('preview').replaceChildren(video);
-
  message('Video uploaded successfully');
 });
 
 async function loadEngine(){
-
  if(loaded)return;
 
  message('Loading Video Editing Engine...');
@@ -158,25 +154,14 @@ createBtn.addEventListener('click',async()=>{
 
   message('Preparing your video...');
 
-  const extension=
-   videoFile.name.split('.').pop().toLowerCase();
-
+  const extension=videoFile.name.split('.').pop().toLowerCase();
   const inputName='input.'+
    (/^[a-z0-9]+$/.test(extension)?extension:'mp4');
 
-  ffmpeg.FS(
-   'writeFile',
-   inputName,
-   await fetchFile(videoFile)
-  );
+  ffmpeg.FS('writeFile',inputName,await fetchFile(videoFile));
 
-  const seconds=Number(
-   document.getElementById('seconds').value
-  );
-
-  const requested=Number(
-   document.getElementById('count').value
-  );
+  const seconds=Number(document.getElementById('seconds').value);
+  const requested=Number(document.getElementById('count').value);
 
   const count=Math.min(
    requested,
@@ -187,19 +172,13 @@ createBtn.addEventListener('click',async()=>{
 
   for(let i=0;i<count;i++){
 
-   const start=count===1?0:
-    maxStart*i/(count-1);
+   const start=count===1?0:maxStart*i/(count-1);
 
-   const clipDuration=Math.min(
-    seconds,
-    duration-start
-   );
+   const clipDuration=Math.min(seconds,duration-start);
 
    const output='short_'+(i+1)+'.mp4';
 
-   message(
-    'Creating Short '+(i+1)+' of '+count+'...'
-   );
+   message('Creating Short '+(i+1)+' of '+count+'...');
 
    await ffmpeg.run(
     '-ss',String(start),
@@ -220,12 +199,9 @@ createBtn.addEventListener('click',async()=>{
 
    const data=ffmpeg.FS('readFile',output);
 
-   const blob=new Blob(
-    [data.buffer],
-    {type:'video/mp4'}
-   );
-
+   const blob=new Blob([data],{type:'video/mp4'});
    const url=URL.createObjectURL(blob);
+
    downloadUrls.push(url);
 
    const card=document.createElement('div');
@@ -252,10 +228,7 @@ createBtn.addEventListener('click',async()=>{
  }catch(error){
 
   console.error(error);
-
-  message(
-   'ERROR: '+(error.message||String(error))
-  );
+  message('ERROR: '+(error.message||String(error)));
 
  }finally{
 
@@ -265,6 +238,5 @@ createBtn.addEventListener('click',async()=>{
 
 });
 </script>
-
 </body>
 </html>
