@@ -37,13 +37,12 @@ video{width:100%;margin-top:15px;border-radius:10px}
  background:#29364d;padding:14px;
  border-radius:10px;margin-top:12px
 }
-.clip a{color:#8ec5ff}
-small{color:#b8c5d8}
+.clip a{color:#8ec5ff;font-weight:bold}
 </style>
 </head>
 <body>
-<div class="container">
 
+<div class="container">
 <h1>IPL UPDATE</h1>
 <h2>AI SHORTS MAKER</h2>
 <p>Automatic Video Shorts Creator</p>
@@ -70,10 +69,8 @@ small{color:#b8c5d8}
 </select>
 
 <button id="createBtn" disabled>CREATE SHORTS</button>
-
 <p id="status">Please upload your video</p>
 <div id="results"></div>
-
 </div>
 
 <script type="module">
@@ -84,9 +81,11 @@ import { toBlobURL } from
 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
 
 const ffmpeg = new FFmpeg();
-let videoFile = null;
+
 let loaded = false;
+let videoFile = null;
 let duration = 0;
+let downloadUrls = [];
 
 const fileInput = document.getElementById('videoFile');
 const createBtn = document.getElementById('createBtn');
@@ -97,35 +96,43 @@ function message(text){
 }
 
 fileInput.addEventListener('change',()=>{
- videoFile = fileInput.files[0];
+ videoFile=fileInput.files[0];
  if(!videoFile)return;
 
  const url=URL.createObjectURL(videoFile);
  const video=document.createElement('video');
  video.src=url;
  video.controls=true;
+
  video.onloadedmetadata=()=>{
   duration=video.duration;
   document.getElementById('durationInfo').textContent=
   'Video Duration: '+Math.floor(duration/60)+' min '+
   Math.floor(duration%60)+' sec';
+  createBtn.disabled=false;
  };
- const preview=document.getElementById('preview');
- preview.replaceChildren(video);
- createBtn.disabled=false;
+
+ document.getElementById('preview').replaceChildren(video);
  message('Video uploaded successfully');
 });
 
 async function loadEngine(){
  if(loaded)return;
 
- message('Loading video editing engine...');
+ message('Loading Editing Engine...');
 
  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
 
  await ffmpeg.load({
-  coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
-  wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')
+  coreURL:await toBlobURL(
+   base+'/ffmpeg-core.js','text/javascript'
+  ),
+  wasmURL:await toBlobURL(
+   base+'/ffmpeg-core.wasm','application/wasm'
+  ),
+  classWorkerURL:new URL(
+   './worker.js',document.baseURI
+  ).href
  });
 
  loaded=true;
@@ -137,42 +144,38 @@ createBtn.addEventListener('click',async()=>{
  createBtn.disabled=true;
  document.getElementById('results').innerHTML='';
 
+ downloadUrls.forEach(url=>URL.revokeObjectURL(url));
+ downloadUrls=[];
+
  try{
   await loadEngine();
 
-  message('Preparing your video...');
-
-  const inputName='inputvideo.'+
-   (videoFile.name.split('.').pop()||'mp4');
+  message('Preparing video...');
 
   await ffmpeg.writeFile(
-   inputName,
+   'input.mp4',
    new Uint8Array(await videoFile.arrayBuffer())
   );
 
   const seconds=Number(document.getElementById('seconds').value);
   const requested=Number(document.getElementById('count').value);
-
-  const possible=Math.max(1,Math.ceil(duration/seconds));
-  const count=Math.min(requested,possible);
+  const count=Math.min(requested,Math.max(1,Math.ceil(duration/seconds)));
   const maxStart=Math.max(0,duration-seconds);
 
   for(let i=0;i<count;i++){
-   const start=count===1?0:
-    maxStart*i/(count-1);
 
+   const start=count===1?0:maxStart*i/(count-1);
    const output='short_'+(i+1)+'.mp4';
 
    message('Creating Short '+(i+1)+' of '+count+'...');
 
    await ffmpeg.exec([
     '-ss',String(start),
-    '-i',inputName,
+    '-i','input.mp4',
     '-t',String(Math.min(seconds,duration-start)),
     '-map','0:v:0',
     '-map','0:a?',
-    '-vf',
-    'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
+    '-vf','scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
     '-c:v','libx264',
     '-preset','ultrafast',
     '-crf','25',
@@ -185,6 +188,7 @@ createBtn.addEventListener('click',async()=>{
    const data=await ffmpeg.readFile(output);
    const blob=new Blob([data],{type:'video/mp4'});
    const url=URL.createObjectURL(blob);
+   downloadUrls.push(url);
 
    const card=document.createElement('div');
    card.className='clip';
@@ -203,12 +207,12 @@ createBtn.addEventListener('click',async()=>{
    await ffmpeg.deleteFile(output);
   }
 
-  message('All Shorts created successfully!');
+  await ffmpeg.deleteFile('input.mp4');
+  message('All Shorts Created Successfully!');
 
  }catch(error){
   console.error(error);
-  message('Error: '+error.message+
-   '. Try a smaller video or refresh the page.');
+  message('Error: '+error.message);
  }finally{
   createBtn.disabled=false;
  }
