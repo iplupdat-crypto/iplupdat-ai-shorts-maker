@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPL Update AI Shorts Maker</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#101522;
+ color:white;
+ font-family:Arial,sans-serif;
+ padding:25px;
+}
+.container{
+ max-width:750px;
+ margin:30px auto;
+ background:#1b2435;
+ padding:30px;
+ border-radius:18px;
+}
+h1{text-align:center;color:#ffcc33}
+p{text-align:center;color:#bbc5d5}
+.upload{
+ border:2px dashed #71809b;
+ padding:35px;
+ text-align:center;
+ border-radius:12px;
+ margin:25px 0;
+}
+input,select,button{
+ width:100%;
+ padding:14px;
+ margin-top:12px;
+ border-radius:8px;
+ border:0;
+}
+button{
+ background:#e52b36;
+ color:white;
+ font-weight:bold;
+ cursor:pointer;
+}
+video{width:100%;margin-top:15px;border-radius:10px}
+#status{color:#ffcc33;text-align:center;margin-top:15px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>IPL UPDATE</h1>
+<h2 style="text-align:center">AI SHORTS MAKER</h2>
+<p>Create YouTube Shorts Easily</p>
+
+<div class="upload">
+<h3>Upload Your Video</h3>
+<input type="file" id="videoFile" accept="video/*">
+</div>
+
+<label>Select Shorts Duration</label>
+<select id="duration">
+<option value="30">30 Seconds</option>
+<option value="60" selected>60 Seconds</option>
+<option value="90">90 Seconds</option>
+</select>
+
+<div id="preview"></div>
+
+<button onclick="createShort()">CREATE SHORTS</button>
+<p id="status">Upload a video to get started</p>
+<div id="result"></div>
+</div>
+
+<script>
+let fileURL = "";
+
+document.getElementById("videoFile").addEventListener("change", function(){
+ const file=this.files[0];
+ if(!file) return;
+ fileURL=URL.createObjectURL(file);
+ document.getElementById("preview").innerHTML=
+ '<video controls src="'+fileURL+'"></video>';
+ document.getElementById("status").innerText="Video uploaded successfully";
+});
+
+function createShort(){
+ if(!fileURL){
+  alert("Please upload a video first");
+  return;
+ }
+ document.getElementById("status").innerText=
+ "Video ready. Editing engine will be connected in the next step.";
+}
+</script>
+</body>
+</html>
