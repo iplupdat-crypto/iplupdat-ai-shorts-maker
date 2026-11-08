@@ -6,42 +6,97 @@
 <title>IPL Update AI Shorts Maker</title>
 
 <style>
-*{box-sizing:border-box}
-body{
- margin:0;padding:20px;background:#101522;color:white;
- font-family:Arial,sans-serif
+* {
+  box-sizing: border-box;
 }
-.container{
- max-width:760px;margin:30px auto;padding:28px;
- background:#1b2435;border-radius:18px
+
+body {
+  margin: 0;
+  padding: 20px;
+  background: #101522;
+  color: white;
+  font-family: Arial, sans-serif;
 }
-h1{text-align:center;color:#ffcc33}
-h2{text-align:center}
-p{text-align:center;color:#cbd5e1}
-.upload{
- border:2px dashed #71809b;padding:28px;
- border-radius:12px;text-align:center;margin:22px 0
+
+.container {
+  max-width: 760px;
+  margin: 30px auto;
+  padding: 28px;
+  background: #1b2435;
+  border-radius: 18px;
 }
-input,select,button{
- width:100%;padding:13px;margin-top:12px;
- border-radius:8px;border:0
+
+h1 {
+  text-align: center;
+  color: #ffcc33;
 }
-button{
- background:#e52b36;color:white;font-weight:bold;
- cursor:pointer
+
+h2, p {
+  text-align: center;
 }
-button:disabled{opacity:.5;cursor:not-allowed}
-video{width:100%;margin-top:15px;border-radius:10px}
-#status{color:#ffcc33;overflow-wrap:anywhere}
-.clip{
- background:#29364d;padding:14px;
- border-radius:10px;margin-top:12px
+
+p {
+  color: #cbd5e1;
 }
-.clip a{color:#8ec5ff;font-weight:bold}
+
+.upload {
+  border: 2px dashed #71809b;
+  padding: 28px;
+  border-radius: 12px;
+  text-align: center;
+  margin: 22px 0;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 13px;
+  margin-top: 12px;
+  border-radius: 8px;
+  border: 0;
+}
+
+button {
+  background: #e52b36;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+video {
+  width: 100%;
+  margin-top: 15px;
+  border-radius: 10px;
+  background: black;
+}
+
+#status {
+  color: #ffcc33;
+  overflow-wrap: anywhere;
+}
+
+.clip {
+  background: #29364d;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+
+.clip a {
+  display: block;
+  color: #8ec5ff;
+  margin-top: 10px;
+  font-weight: bold;
+}
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
 <h1>IPL UPDATE</h1>
@@ -54,189 +109,272 @@ video{width:100%;margin-top:15px;border-radius:10px}
 </div>
 
 <div id="preview"></div>
+
 <p id="durationInfo"></p>
 
 <label>Select Number of Shorts</label>
+
 <select id="count">
 <option value="5">5 Shorts</option>
 <option value="6" selected>6 Shorts</option>
 </select>
 
 <label>Each Short Duration</label>
+
 <select id="seconds">
 <option value="30">30 Seconds</option>
 <option value="45">45 Seconds</option>
 <option value="60" selected>60 Seconds</option>
 </select>
 
-<button id="createBtn" disabled>CREATE SHORTS</button>
+<button id="createBtn" disabled>
+CREATE SHORTS
+</button>
 
 <p id="status">Please upload your video</p>
+
 <div id="results"></div>
 
 </div>
 
-<!-- Single Thread FFmpeg: No SharedArrayBuffer required -->
+<!-- FFmpeg Single Thread -->
+
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
 <script>
+
 const { createFFmpeg, fetchFile } = FFmpeg;
 
 const ffmpeg = createFFmpeg({
- log:true,
- corePath:'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+  log: true,
+  mainName: 'main',
+  corePath:
+  'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js'
 });
 
-let loaded=false;
-let videoFile=null;
-let duration=0;
-let downloadUrls=[];
+let loaded = false;
+let videoFile = null;
+let duration = 0;
+let downloadUrls = [];
 
-const fileInput=document.getElementById('videoFile');
-const createBtn=document.getElementById('createBtn');
-const status=document.getElementById('status');
+const fileInput = document.getElementById('videoFile');
+const createBtn = document.getElementById('createBtn');
+const status = document.getElementById('status');
 
-function message(text){
- status.textContent=text;
+function message(text) {
+  status.textContent = text;
 }
 
-fileInput.addEventListener('change',()=>{
- videoFile=fileInput.files[0];
+fileInput.addEventListener('change', function() {
 
- if(!videoFile)return;
+  videoFile = this.files[0];
 
- const url=URL.createObjectURL(videoFile);
- const video=document.createElement('video');
+  if (!videoFile) return;
 
- video.src=url;
- video.controls=true;
+  const url = URL.createObjectURL(videoFile);
 
- video.onloadedmetadata=()=>{
-  duration=video.duration;
+  const video = document.createElement('video');
 
-  document.getElementById('durationInfo').textContent=
-   'Video Duration: '+
-   Math.floor(duration/60)+' min '+
-   Math.floor(duration%60)+' sec';
+  video.src = url;
+  video.controls = true;
+  video.preload = 'metadata';
 
-  createBtn.disabled=false;
- };
+  video.onloadedmetadata = function() {
 
- document.getElementById('preview').replaceChildren(video);
- message('Video uploaded successfully');
+    duration = video.duration;
+
+    document.getElementById('durationInfo').textContent =
+      'Video Duration: ' +
+      Math.floor(duration / 60) +
+      ' min ' +
+      Math.floor(duration % 60) +
+      ' sec';
+
+    createBtn.disabled = false;
+
+    message('Video Uploaded Successfully');
+
+  };
+
+  document.getElementById('preview').replaceChildren(video);
+
 });
 
-async function loadEngine(){
- if(loaded)return;
+async function loadEngine() {
 
- message('Loading Video Editing Engine...');
+  if (loaded) return;
 
- await ffmpeg.load();
+  message('Loading Video Editing Engine...');
 
- loaded=true;
+  await ffmpeg.load();
+
+  loaded = true;
+
+  message('Video Engine Ready');
+
 }
 
-createBtn.addEventListener('click',async()=>{
+createBtn.addEventListener('click', async function() {
 
- if(!videoFile)return;
-
- createBtn.disabled=true;
-
- const results=document.getElementById('results');
- results.innerHTML='';
-
- downloadUrls.forEach(url=>URL.revokeObjectURL(url));
- downloadUrls=[];
-
- try{
-
-  await loadEngine();
-
-  message('Preparing your video...');
-
-  const extension=videoFile.name.split('.').pop().toLowerCase();
-  const inputName='input.'+
-   (/^[a-z0-9]+$/.test(extension)?extension:'mp4');
-
-  ffmpeg.FS('writeFile',inputName,await fetchFile(videoFile));
-
-  const seconds=Number(document.getElementById('seconds').value);
-  const requested=Number(document.getElementById('count').value);
-
-  const count=Math.min(
-   requested,
-   Math.max(1,Math.ceil(duration/seconds))
-  );
-
-  const maxStart=Math.max(0,duration-seconds);
-
-  for(let i=0;i<count;i++){
-
-   const start=count===1?0:maxStart*i/(count-1);
-
-   const clipDuration=Math.min(seconds,duration-start);
-
-   const output='short_'+(i+1)+'.mp4';
-
-   message('Creating Short '+(i+1)+' of '+count+'...');
-
-   await ffmpeg.run(
-    '-ss',String(start),
-    '-i',inputName,
-    '-t',String(clipDuration),
-    '-map','0:v:0',
-    '-map','0:a?',
-    '-vf',
-    'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
-    '-c:v','libx264',
-    '-preset','ultrafast',
-    '-crf','25',
-    '-c:a','aac',
-    '-b:a','128k',
-    '-movflags','+faststart',
-    '-y',output
-   );
-
-   const data=ffmpeg.FS('readFile',output);
-
-   const blob=new Blob([data],{type:'video/mp4'});
-   const url=URL.createObjectURL(blob);
-
-   downloadUrls.push(url);
-
-   const card=document.createElement('div');
-   card.className='clip';
-
-   const heading=document.createElement('h3');
-   heading.textContent='Short '+(i+1);
-
-   const link=document.createElement('a');
-   link.href=url;
-   link.download='IPL-Short-'+(i+1)+'.mp4';
-   link.textContent='DOWNLOAD MP4';
-
-   card.append(heading,link);
-   results.append(card);
-
-   ffmpeg.FS('unlink',output);
+  if (!videoFile) {
+    message('Please Upload Your Video');
+    return;
   }
 
-  ffmpeg.FS('unlink',inputName);
+  createBtn.disabled = true;
 
-  message('All Shorts Created Successfully!');
+  const results = document.getElementById('results');
 
- }catch(error){
+  results.innerHTML = '';
 
-  console.error(error);
-  message('ERROR: '+(error.message||String(error)));
+  downloadUrls.forEach(function(url) {
+    URL.revokeObjectURL(url);
+  });
 
- }finally{
+  downloadUrls = [];
 
-  createBtn.disabled=false;
+  let inputName = 'input.mp4';
 
- }
+  try {
+
+    await loadEngine();
+
+    message('Preparing Video...');
+
+    const extension =
+      videoFile.name.split('.').pop().toLowerCase();
+
+    if (/^[a-z0-9]+$/.test(extension)) {
+      inputName = 'input.' + extension;
+    }
+
+    ffmpeg.FS(
+      'writeFile',
+      inputName,
+      await fetchFile(videoFile)
+    );
+
+    const seconds =
+      Number(document.getElementById('seconds').value);
+
+    const requested =
+      Number(document.getElementById('count').value);
+
+    const count = Math.min(
+      requested,
+      Math.max(1, Math.ceil(duration / seconds))
+    );
+
+    const maxStart = Math.max(0, duration - seconds);
+
+    for (let i = 0; i < count; i++) {
+
+      const start =
+        count === 1 ? 0 : maxStart * i / (count - 1);
+
+      const clipDuration =
+        Math.min(seconds, duration - start);
+
+      const output = 'short_' + (i + 1) + '.mp4';
+
+      message(
+        'Creating Short ' + (i + 1) +
+        ' of ' + count + '...'
+      );
+
+      await ffmpeg.run(
+
+        '-ss', String(start),
+
+        '-i', inputName,
+
+        '-t', String(clipDuration),
+
+        '-map', '0:v:0',
+
+        '-map', '0:a?',
+
+        '-vf',
+        'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
+
+        '-c:v', 'libx264',
+
+        '-preset', 'ultrafast',
+
+        '-crf', '25',
+
+        '-c:a', 'aac',
+
+        '-b:a', '128k',
+
+        '-movflags', '+faststart',
+
+        '-y',
+
+        output
+
+      );
+
+      const data = ffmpeg.FS('readFile', output);
+
+      const blob = new Blob(
+        [data],
+        { type: 'video/mp4' }
+      );
+
+      const url = URL.createObjectURL(blob);
+
+      downloadUrls.push(url);
+
+      const card = document.createElement('div');
+
+      card.className = 'clip';
+
+      const heading = document.createElement('h3');
+
+      heading.textContent = 'Short ' + (i + 1);
+
+      const link = document.createElement('a');
+
+      link.href = url;
+
+      link.download =
+        'IPL-Short-' + (i + 1) + '.mp4';
+
+      link.textContent = 'DOWNLOAD SHORT ' + (i + 1);
+
+      card.appendChild(heading);
+
+      card.appendChild(link);
+
+      results.appendChild(card);
+
+      ffmpeg.FS('unlink', output);
+
+    }
+
+    ffmpeg.FS('unlink', inputName);
+
+    message('All Shorts Created Successfully!');
+
+  } catch (error) {
+
+    console.error(error);
+
+    message(
+      'ERROR: ' +
+      (error.message || String(error))
+    );
+
+  } finally {
+
+    createBtn.disabled = false;
+
+  }
 
 });
+
 </script>
+
 </body>
 </html>
