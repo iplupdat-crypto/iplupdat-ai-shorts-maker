@@ -1,0 +1,5 @@
+{
+  "name": "iplupdat-ai-shorts-maker",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-09"
+}
