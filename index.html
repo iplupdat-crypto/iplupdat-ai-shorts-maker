@@ -5,64 +5,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IPL UPDATE AI Shorts Maker</title>
-
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;padding:18px;background:#08111f;color:white;
- font-family:Arial,sans-serif
-}
-.container{
- max-width:760px;margin:20px auto;background:#142238;
- padding:24px;border-radius:16px
-}
+body{margin:0;padding:18px;background:#08111f;color:white;font-family:Arial,sans-serif}
+.container{max-width:760px;margin:20px auto;background:#142238;padding:24px;border-radius:16px}
 h1{text-align:center;color:#ffcc33;margin-bottom:5px}
 h2{text-align:center;color:#fff}
 p{text-align:center;color:#cbd5e1}
 label{display:block;margin-top:18px;font-weight:bold}
-input,select,button{
- width:100%;padding:13px;margin-top:9px;
- border:0;border-radius:8px;font-size:16px
-}
-button{
- background:#e52b36;color:white;font-weight:bold;
- cursor:pointer
-}
+input,select,button{width:100%;padding:13px;margin-top:9px;border:0;border-radius:8px;font-size:16px}
+button{background:#e52b36;color:white;font-weight:bold;cursor:pointer}
 button:disabled{opacity:.5;cursor:not-allowed}
-#status{
- margin-top:18px;padding:14px;background:#08111f;
- border-radius:8px;color:#ffcc33;white-space:pre-wrap;
- overflow-wrap:anywhere
-}
-.progress{
- height:10px;background:#334155;border-radius:10px;
- overflow:hidden;margin-top:12px
-}
+#status{margin-top:18px;padding:14px;background:#08111f;border-radius:8px;color:#ffcc33;white-space:pre-wrap;overflow-wrap:anywhere}
+.progress{height:10px;background:#334155;border-radius:10px;overflow:hidden;margin-top:12px}
 #bar{height:100%;width:0;background:#ffcc33;transition:width .3s}
-video{width:100%;max-height:350px;margin-top:15px;background:black}
-.clip{
- background:#263b59;padding:15px;margin-top:12px;
- border-radius:10px
-}
-.clip a{
- display:block;background:#167347;padding:12px;
- color:white;text-decoration:none;text-align:center;
- border-radius:8px;margin-top:10px
-}
+video{width:100%;max-height:350px;margin-top:12px;background:black}
+.clip{background:#263b59;padding:15px;margin-top:12px;border-radius:10px}
+.clip a{display:block;background:#167347;padding:12px;color:white;text-decoration:none;text-align:center;border-radius:8px;margin-top:10px}
 small{color:#b8c5d8;line-height:1.6}
 </style>
 </head>
-
 <body>
 <div class="container">
-
 <h1>IPL UPDATE</h1>
 <h2>AI SHORTS MAKER</h2>
 <p>Gemini AI News Highlights Generator</p>
 
 <label>1. Upload Your Long Video</label>
 <input type="file" id="videoFile" accept="video/*">
-
 <video id="preview" controls hidden></video>
 
 <label>2. Number of Shorts</label>
@@ -93,10 +63,8 @@ small{color:#b8c5d8;line-height:1.6}
 </select>
 
 <button id="startBtn" onclick="startMaker()">GENERATE AI SHORTS</button>
-
 <div class="progress"><div id="bar"></div></div>
 <div id="status">Upload a video to get started.</div>
-
 <div id="results"></div>
 
 <p><small>
@@ -104,85 +72,71 @@ AI analyzes the video to identify important news highlights.
 Shorts are created in vertical 9:16 format with original audio.
 No captions or extra text are added.
 </small></p>
-
 </div>
 
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
-
 <script>
-const API = "https://iplupdat-ai-shorts.iplupdat.workers.dev";
+const API="https://iplupdat-ai-shorts.iplupdat.workers.dev";
+const fileInput=document.getElementById("videoFile");
+const preview=document.getElementById("preview");
+const statusBox=document.getElementById("status");
+const bar=document.getElementById("bar");
+const startBtn=document.getElementById("startBtn");
+const results=document.getElementById("results");
 
-const fileInput = document.getElementById("videoFile");
-const preview = document.getElementById("preview");
-const statusBox = document.getElementById("status");
-const bar = document.getElementById("bar");
-const startBtn = document.getElementById("startBtn");
-const results = document.getElementById("results");
+let videoDuration=0;
+let ffmpeg=null;
+let ffmpegReady=false;
 
-let videoDuration = 0;
-let ffmpeg = null;
-let ffmpegReady = false;
-
-function status(message, percent) {
- statusBox.textContent = message;
- if (percent !== undefined) {
-  bar.style.width = Math.max(0,Math.min(100,percent)) + "%";
- }
+function status(message,percent){
+ statusBox.textContent=message;
+ if(percent!==undefined)bar.style.width=Math.max(0,Math.min(100,percent))+"%";
 }
 
-fileInput.addEventListener("change", () => {
- const file = fileInput.files[0];
- if (!file) return;
-
- preview.src = URL.createObjectURL(file);
- preview.hidden = false;
-
- preview.onloadedmetadata = () => {
-  videoDuration = preview.duration;
-  status(
-   "Video ready.\nDuration: " +
-   Math.floor(videoDuration) +
-   " seconds."
-  );
+fileInput.addEventListener("change",()=>{
+ const file=fileInput.files[0];
+ if(!file)return;
+ preview.src=URL.createObjectURL(file);
+ preview.hidden=false;
+ preview.onloadedmetadata=()=>{
+  videoDuration=preview.duration;
+  status("Video ready.\nDuration: "+Math.floor(videoDuration)+" seconds.");
  };
 });
 
-async function postJSON(path, data) {
- const response = await fetch(API + path, {
+async function postJSON(path,data){
+ const response=await fetch(API+path,{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify(data)
  });
-
- const result = await response.json();
-
- if (!response.ok) {
-  throw new Error(result.error || "Server request failed");
- }
-
+ const result=await response.json();
+ if(!response.ok)throw new Error(result.error||"Server request failed");
  return result;
 }
 
-async function uploadVideo(file) {
+async function uploadVideo(file){
  status("Step 1/3: Starting secure Gemini upload...",3);
 
- const started = await postJSON("/upload-start", {
+ const started=await postJSON("/upload-start",{
   name:file.name,
   size:file.size,
-  mimeType:file.type || "video/mp4"
+  mimeType:file.type||"video/mp4"
  });
 
- const uploadUrl = started.uploadUrl;
- const chunkSize = 5 * 1024 * 1024;
- let offset = 0;
- let uploadedInfo = null;
+ const uploadUrl=started.uploadUrl;
 
- while (offset < file.size) {
-  const end = Math.min(offset + chunkSize,file.size);
-  const chunk = file.slice(offset,end);
-  const isFinal = end === file.size;
+ // Gemini upload requires 8 MB chunks for this upload session.
+ const chunkSize=8*1024*1024;
+ let offset=0;
+ let uploadedInfo=null;
 
-  const response = await fetch(API + "/upload-chunk", {
+ while(offset<file.size){
+  const end=Math.min(offset+chunkSize,file.size);
+  const chunk=file.slice(offset,end);
+  const isFinal=end===file.size;
+
+  const response=await fetch(API+"/upload-chunk",{
    method:"POST",
    headers:{
     "Content-Type":"application/octet-stream",
@@ -194,34 +148,30 @@ async function uploadVideo(file) {
    body:chunk
   });
 
-  const result = await response.json();
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||"Video upload failed");
 
-  if (!response.ok) {
-   throw new Error(result.error || "Video upload failed");
-  }
-
-  offset = end;
+  offset=end;
 
   status(
-   "Step 1/3: Uploading video to Gemini...\n" +
-   Math.round(offset/file.size*100) + "%",
-   5 + (offset/file.size*35)
+   "Step 1/3: Uploading video to Gemini...\n"+
+   Math.round(offset/file.size*100)+"%",
+   5+(offset/file.size*35)
   );
 
-  if (result.done) uploadedInfo = result;
+  if(result.done)uploadedInfo=result;
  }
 
- if (!uploadedInfo || !uploadedInfo.fileUri) {
+ if(!uploadedInfo||!uploadedInfo.fileUri){
   throw new Error("Gemini upload did not finish correctly");
  }
-
  return uploadedInfo;
 }
 
-async function analyzeVideo(fileInfo,count,maxSeconds) {
+async function analyzeVideo(fileInfo,count,maxSeconds){
  status("Step 2/3: Gemini AI is analyzing the entire video...",45);
 
- const result = await postJSON("/analyze", {
+ const result=await postJSON("/analyze",{
   fileName:fileInfo.fileName,
   fileUri:fileInfo.fileUri,
   mimeType:fileInfo.mimeType,
@@ -230,62 +180,52 @@ async function analyzeVideo(fileInfo,count,maxSeconds) {
   duration:videoDuration
  });
 
- if (!result.clips || !result.clips.length) {
+ if(!result.clips||!result.clips.length){
   throw new Error("Gemini did not find valid highlights");
  }
-
  return result.clips;
 }
 
-async function loadFFmpeg() {
- if (ffmpegReady) return;
-
+async function loadFFmpeg(){
+ if(ffmpegReady)return;
  status("Loading video editing engine...",65);
 
- if (!window.FFmpeg) {
-  throw new Error("FFmpeg library could not be loaded");
- }
+ if(!window.FFmpeg)throw new Error("FFmpeg library could not be loaded");
 
- const {createFFmpeg} = FFmpeg;
-
- ffmpeg = createFFmpeg({
+ const {createFFmpeg}=FFmpeg;
+ ffmpeg=createFFmpeg({
   log:false,
-  corePath:
-   "https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js"
+  corePath:"https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js"
  });
 
  await ffmpeg.load();
- ffmpegReady = true;
+ ffmpegReady=true;
 }
 
-async function createShorts(file,clips,quality) {
+async function createShorts(file,clips,quality){
  await loadFFmpeg();
-
  status("Step 3/3: Creating vertical Shorts...",70);
 
- const inputName = "original_video.mp4";
- const inputBytes = new Uint8Array(await file.arrayBuffer());
-
+ const inputName="original_video.mp4";
+ const inputBytes=new Uint8Array(await file.arrayBuffer());
  ffmpeg.FS("writeFile",inputName,inputBytes);
 
- const outputLinks = [];
+ let created=0;
 
- for (let i=0;i<clips.length;i++) {
-  const clip = clips[i];
-  const outputName = "short_" + (i+1) + ".mp4";
+ for(let i=0;i<clips.length;i++){
+  const clip=clips[i];
+  const outputName="short_"+(i+1)+".mp4";
+  const height=Number(quality);
+  const width=Math.round(height*9/16);
+  const start=Math.max(0,Number(clip.startSeconds));
+  const length=Number(clip.endSeconds)-start;
 
-  const height = Number(quality);
-  const width = Math.round(height * 9 / 16);
-
-  const start = Math.max(0,clip.startSeconds);
-  const length = clip.endSeconds - start;
-
-  if (length <= 0) continue;
+  if(!Number.isFinite(length)||length<=0)continue;
 
   status(
-   "Creating Short " + (i+1) + " of " + clips.length +
-   "\n" + (clip.title || "News highlight"),
-   70 + ((i/clips.length)*28)
+   "Creating Short "+(i+1)+" of "+clips.length+
+   "\n"+(clip.title||"News highlight"),
+   70+(i/clips.length*28)
   );
 
   await ffmpeg.run(
@@ -293,9 +233,8 @@ async function createShorts(file,clips,quality) {
    "-i",inputName,
    "-t",String(length),
    "-vf",
-   "scale=" + width + ":" + height +
-   ":force_original_aspect_ratio=increase,crop=" +
-   width + ":" + height,
+   "scale="+width+":"+height+
+   ":force_original_aspect_ratio=increase,crop="+width+":"+height,
    "-c:v","libx264",
    "-preset","ultrafast",
    "-crf","28",
@@ -305,87 +244,78 @@ async function createShorts(file,clips,quality) {
    outputName
   );
 
-  const data = ffmpeg.FS("readFile",outputName);
-  const blob = new Blob([data.buffer],{type:"video/mp4"});
-  const link = URL.createObjectURL(blob);
+  const data=ffmpeg.FS("readFile",outputName);
+  const blob=new Blob([data],{type:"video/mp4"});
+  const link=URL.createObjectURL(blob);
 
-  outputLinks.push({
-   title:clip.title || "News Short " + (i+1),
-   reason:clip.reason || "",
-   url:link,
-   number:i+1
-  });
+  const card=document.createElement("div");
+  card.className="clip";
 
-  ffmpeg.FS("unlink",outputName);
+  const heading=document.createElement("h3");
+  heading.textContent="Short "+(i+1)+": "+(clip.title||"News Short");
 
-  const card = document.createElement("div");
-  card.className = "clip";
+  const reason=document.createElement("p");
+  reason.textContent=clip.reason||"";
 
-  const heading = document.createElement("h3");
-  heading.textContent = "Short " + (i+1) + ": " + outputLinks[i].title;
-
-  const reason = document.createElement("p");
-  reason.textContent = outputLinks[i].reason;
-
-  const download = document.createElement("a");
-  download.href = link;
-  download.download = "IPL_UPDATE_SHORT_" + (i+1) + ".mp4";
-  download.textContent = "DOWNLOAD MP4";
+  const download=document.createElement("a");
+  download.href=link;
+  download.download="IPL_UPDATE_SHORT_"+(i+1)+".mp4";
+  download.textContent="DOWNLOAD MP4";
 
   card.appendChild(heading);
   card.appendChild(reason);
   card.appendChild(download);
   results.appendChild(card);
+
+  ffmpeg.FS("unlink",outputName);
+  created++;
  }
 
  ffmpeg.FS("unlink",inputName);
 
- status(
-  "Completed! " + outputLinks.length +
-  " Shorts created successfully.",
-  100
- );
+ if(!created)throw new Error("No Shorts could be created");
+
+ status("Completed! "+created+" Shorts created successfully.",100);
 }
 
-async function startMaker() {
- const file = fileInput.files[0];
+async function startMaker(){
+ const file=fileInput.files[0];
 
- if (!file) {
+ if(!file){
   alert("Please upload a video first.");
   return;
  }
 
- if (!videoDuration || !Number.isFinite(videoDuration)) {
+ if(!videoDuration||!Number.isFinite(videoDuration)){
   alert("Please wait until video duration is loaded.");
   return;
  }
 
- if (file.size > 2 * 1024 * 1024 * 1024) {
+ if(file.size>2*1024*1024*1024){
   alert("Video must be smaller than 2 GB.");
   return;
  }
 
- const count = Number(document.getElementById("count").value);
- const maxSeconds = Number(document.getElementById("duration").value);
- const quality = document.getElementById("quality").value;
+ const count=Number(document.getElementById("count").value);
+ const maxSeconds=Number(document.getElementById("duration").value);
+ const quality=document.getElementById("quality").value;
 
- startBtn.disabled = true;
- results.innerHTML = "";
- bar.style.width = "0%";
+ startBtn.disabled=true;
+ results.innerHTML="";
+ bar.style.width="0%";
 
- try {
-  const fileInfo = await uploadVideo(file);
-  const clips = await analyzeVideo(fileInfo,count,maxSeconds);
+ try{
+  const fileInfo=await uploadVideo(file);
+  const clips=await analyzeVideo(fileInfo,count,maxSeconds);
   await createShorts(file,clips,quality);
- } catch(error) {
+ }catch(error){
   console.error(error);
-  status("ERROR: " + error.message);
-  alert("Shorts creation failed:\n" + error.message);
- } finally {
-  startBtn.disabled = false;
+  status("ERROR: "+error.message);
+  alert("Shorts creation failed:\n"+error.message);
+ }finally{
+  startBtn.disabled=false;
  }
 }
 </script>
-
 </body>
 </html>
